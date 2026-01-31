@@ -1,0 +1,20 @@
+{
+  "ENV_NAME": "LunarLander-v3",
+  "GAMMA": 0.99,
+  "LAMBDA": 0.95,
+  "CLIP_EPS": 0.2,
+  "LR": 0.00025,
+  "EPOCHS": 4,
+  "BATCH_SIZE": 256,
+  "TIMESTEPS": 1024,
+  "MAX_UPDATES": 300,
+  "ENTROPY_COEF": 0.01,
+  "VALUE_COEF": 1.0,
+  "MAX_GRAD_NORM": 0.5,
+  "ANNEAL_LR": true,
+  "USE_VALUE_CLIP": true,
+  "PLOT_EVERY": 1,
+  "TARGET_30_MIN_MODE": true,
+  "FAST_MODE": false,
+  "start_time": "2026-01-29 14:40:05"
+}
