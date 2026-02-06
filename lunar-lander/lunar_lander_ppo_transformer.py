@@ -29,8 +29,8 @@ class TransformerActorCritic(nn.Module):
     def __init__(self, obs_dim, act_dim, hidden_dim=128, num_heads=4, num_layers=2):
         super().__init__()
         
-        # Input embedding
-        self.input_embed = nn.Linear(obs_dim, hidden_dim)
+        # Input embedding (state + previous action one-hot)
+        self.input_embed = nn.Linear(obs_dim + act_dim, hidden_dim)
         
         # Positional encoding
         self.pos_encoder = PositionalEncoding(hidden_dim, dropout=0.1)
@@ -108,23 +108,32 @@ def compute_gae(rewards, values, dones, last_value):
 # Sequence Buffer
 # ======================
 class SequenceBuffer:
-    def __init__(self, seq_len):
+    def __init__(self, seq_len, obs_dim, act_dim):
         self.seq_len = seq_len
+        self.obs_dim = obs_dim
+        self.act_dim = act_dim
         self.reset()
     
     def reset(self):
         self.obs_history = []
+        self.act_history = []
     
-    def add(self, obs):
+    def add(self, obs, prev_action):
         self.obs_history.append(obs)
+        self.act_history.append(prev_action)
         if len(self.obs_history) > self.seq_len:
             self.obs_history.pop(0)
+            self.act_history.pop(0)
     
     def get_sequence(self):
         # Pad if needed
         while len(self.obs_history) < self.seq_len:
-            self.obs_history.insert(0, np.zeros_like(self.obs_history[0] if self.obs_history else np.zeros(8)))
-        return np.array(self.obs_history[-self.seq_len:])
+            self.obs_history.insert(0, np.zeros(self.obs_dim))
+            self.act_history.insert(0, np.zeros(self.act_dim))
+
+        obs_seq = np.array(self.obs_history[-self.seq_len:])
+        act_seq = np.array(self.act_history[-self.seq_len:])
+        return np.concatenate([obs_seq, act_seq], axis=1)
 
 # ======================
 # Environment
@@ -143,8 +152,9 @@ print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
 # Training Loop
 # ======================
 obs, _ = env.reset()
-seq_buffer = SequenceBuffer(SEQUENCE_LENGTH)
-seq_buffer.add(obs)
+seq_buffer = SequenceBuffer(SEQUENCE_LENGTH, obs_dim, act_dim)
+prev_action = np.zeros(act_dim)
+seq_buffer.add(obs, prev_action)
 episode_reward = 0
 episode_rewards = []
 
@@ -155,7 +165,7 @@ for update in range(1, MAX_UPDATES + 1):
 
     # -------- Rollout --------
     for step in range(TIMESTEPS):
-        # Get sequence
+        # Get sequence (state + previous action)
         obs_seq = seq_buffer.get_sequence()
         obs_sequences.append(obs_seq)
         
@@ -178,7 +188,9 @@ for update in range(1, MAX_UPDATES + 1):
         val_buf.append(value.item())
 
         obs = next_obs
-        seq_buffer.add(obs)
+        prev_action = np.zeros(act_dim)
+        prev_action[action.item()] = 1.0
+        seq_buffer.add(obs, prev_action)
         episode_reward += reward
 
         if done:
@@ -186,7 +198,8 @@ for update in range(1, MAX_UPDATES + 1):
             episode_rewards.append(episode_reward)
             obs, _ = env.reset()
             seq_buffer.reset()
-            seq_buffer.add(obs)
+            prev_action = np.zeros(act_dim)
+            seq_buffer.add(obs, prev_action)
             episode_reward = 0
 
     # -------- Advantage --------
