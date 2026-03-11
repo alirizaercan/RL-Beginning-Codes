@@ -15,7 +15,7 @@ from physics import (
     clean_particles,
 )
 from rendering import render_frame, close_display
-from llm_reward import build_reward_prompt, get_llm_reward
+from llm_reward import build_reward_prompt, get_llm_decision
 
 
 class LunarLanderEnv(gym.Env, EzPickle):
@@ -175,16 +175,8 @@ class LunarLanderEnv(gym.Env, EzPickle):
         original_reward -= m_power * 0.30   # less fuel spent is better, about -30 for heuristic landing
         original_reward -= s_power * 0.03   
 
-        terminated = False
-        if self.game_over or abs(obs[0]) >= 1.0:
-            terminated    = True
-            original_reward = -100.0
-        if not self.lander.awake:
-            terminated    = True
-            original_reward = +100.0
-
-        prompt     = build_reward_prompt(obs, action, terminated, self.extra_rules)
-        llm_reward = get_llm_reward(prompt)
+        prompt = build_reward_prompt(obs, action, self.game_over, self.extra_rules)
+        llm_reward, terminated = get_llm_decision(prompt)
 
         if self.render_mode == "human":
             render_frame(self)
