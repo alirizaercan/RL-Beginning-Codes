@@ -55,3 +55,8 @@ Thumbs.db
 # Model checkpoints (uncomment if you don't want to track models)
 # *.pt
 # *.pth
+
+# Local fine-tune notebook workspace and generated artifacts
+fine-tune/local_notebooks/
+fine-tune/local_runs/
+runs/
