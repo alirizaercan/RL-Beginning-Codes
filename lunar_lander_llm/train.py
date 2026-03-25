@@ -1,10 +1,14 @@
 from stable_baselines3 import PPO
+from gymnasium.wrappers import TimeLimit
 from env import LunarLanderEnv
 
 EXTRA_RULES = """
 """
 
-env = LunarLanderEnv(extra_rules=EXTRA_RULES, render_mode="human")
+env = TimeLimit(
+    LunarLanderEnv(extra_rules=EXTRA_RULES, render_mode="human"),
+    max_episode_steps=500
+)
 
 model = PPO(
     "MlpPolicy",
@@ -13,8 +17,7 @@ model = PPO(
     device="cpu"
 )
 
-print("Training PPO agent...")
-model.learn(total_timesteps=200_000)
+model.learn(total_timesteps=1_000_000)
 model.save("ppo_lunarlander_llm")
 print("Model saved!")
 env.close()
