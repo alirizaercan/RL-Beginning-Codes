@@ -15,7 +15,7 @@ from physics import (
     clean_particles,
 )
 from rendering import render_frame, close_display
-from llm_reward import get_llm_action        
+from llm import get_llm_action        
 
 
 class LunarLanderEnv(gym.Env, EzPickle):
