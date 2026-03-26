@@ -57,7 +57,7 @@ for ax, (label, group) in zip(axes, df.groupby("action_label")):
     ax.set_xlabel("x position")
     ax.set_ylabel("y position")
 
-fig.suptitle(f"X-Y Position per Action (balanced, {TARGET_PER_ACTION} each)", fontsize=14)
+fig.suptitle(f"X-Y Position per Action (balanced, {TARGET_PER_ACTION} each, {ep} episodes)", fontsize=14)
 plt.tight_layout()
 plt.savefig("xy_balanced.png", dpi=150)
 plt.show()
