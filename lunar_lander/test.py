@@ -4,7 +4,7 @@ from stable_baselines3 import PPO
 
 env = gym.make("LunarLander-v3", render_mode="human")
 
-model = PPO.load("3_layer", device="cpu")
+model = PPO.load("LunarLander-v3_PPO_ne128_ns1024_b64_e4_cpu_TotalStep9000K", device="cpu")
 
 observation, info = env.reset()
 
