@@ -5,7 +5,7 @@ from stable_baselines3 import PPO
 env = gym.make("LunarLander-v3")
 
 policy_kwargs = dict(
-    net_arch=[64, 64, 64, 64],
+    net_arch=[64, 64, 64],
     activation_fn=nn.SiLU
 )
 
