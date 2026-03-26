@@ -1,0 +1,86 @@
+[
+  {
+    "name": "action_0_case_1",
+    "state": "[x=0.1736, y=1.5119, vx=0.6702, vy=-0.1407, angle=0.0600, angular_vel=0.1341, left_leg=0.0000, right_leg=0.0000]",
+    "expected_action": 0,
+    "expected_text": "Action: 0 (do nothing).",
+    "source_index": 14593
+  },
+  {
+    "name": "action_0_case_2",
+    "state": "[x=0.1820, y=-0.0093, vx=-0.2712, vy=-0.0030, angle=0.4365, angular_vel=-0.2640, left_leg=1.0000, right_leg=1.0000]",
+    "expected_action": 0,
+    "expected_text": "Action: 0 (do nothing).",
+    "source_index": 72069
+  },
+  {
+    "name": "action_0_case_3",
+    "state": "[x=-0.0854, y=-0.0122, vx=0.1788, vy=0.0237, angle=-0.0882, angular_vel=0.0767, left_leg=0.0000, right_leg=0.0000]",
+    "expected_action": 0,
+    "expected_text": "Action: 0 (do nothing).",
+    "source_index": 83936
+  },
+  {
+    "name": "action_1_case_1",
+    "state": "[x=-0.1485, y=0.0062, vx=0.3649, vy=-0.1298, angle=-0.0892, angular_vel=-0.8734, left_leg=1.0000, right_leg=1.0000]",
+    "expected_action": 1,
+    "expected_text": "Action: 1 (fire left engine).",
+    "source_index": 80872
+  },
+  {
+    "name": "action_1_case_2",
+    "state": "[x=-0.1871, y=1.4870, vx=-0.6076, vy=-0.2755, angle=-0.1377, angular_vel=-0.1380, left_leg=0.0000, right_leg=0.0000]",
+    "expected_action": 1,
+    "expected_text": "Action: 1 (fire left engine).",
+    "source_index": 31385
+  },
+  {
+    "name": "action_1_case_3",
+    "state": "[x=-0.0828, y=-0.0197, vx=0.1750, vy=0.0314, angle=-0.1398, angular_vel=0.0973, left_leg=0.0000, right_leg=0.0000]",
+    "expected_action": 1,
+    "expected_text": "Action: 1 (fire left engine).",
+    "source_index": 74709
+  },
+  {
+    "name": "action_2_case_1",
+    "state": "[x=-0.1103, y=-0.0052, vx=0.3621, vy=-0.2184, angle=0.0148, angular_vel=-1.0327, left_leg=1.0000, right_leg=1.0000]",
+    "expected_action": 2,
+    "expected_text": "Action: 2 (fire main engine).",
+    "source_index": 74698
+  },
+  {
+    "name": "action_2_case_2",
+    "state": "[x=-0.2155, y=1.4088, vx=-0.6820, vy=-0.4038, angle=-0.1652, angular_vel=-0.1383, left_leg=0.0000, right_leg=0.0000]",
+    "expected_action": 2,
+    "expected_text": "Action: 2 (fire main engine).",
+    "source_index": 94567
+  },
+  {
+    "name": "action_2_case_3",
+    "state": "[x=-0.1333, y=0.0337, vx=0.4387, vy=-0.3721, angle=0.1083, angular_vel=0.0550, left_leg=0.0000, right_leg=0.0000]",
+    "expected_action": 2,
+    "expected_text": "Action: 2 (fire main engine).",
+    "source_index": 74692
+  },
+  {
+    "name": "action_3_case_1",
+    "state": "[x=0.1694, y=0.0202, vx=-0.2194, vy=-0.2202, angle=0.2051, angular_vel=1.1019, left_leg=1.0000, right_leg=1.0000]",
+    "expected_action": 3,
+    "expected_text": "Action: 3 (fire right engine).",
+    "source_index": 62967
+  },
+  {
+    "name": "action_3_case_2",
+    "state": "[x=-0.1381, y=1.5195, vx=-0.6131, vy=-0.0606, angle=-0.0805, angular_vel=-0.1155, left_leg=0.0000, right_leg=0.0000]",
+    "expected_action": 3,
+    "expected_text": "Action: 3 (fire right engine).",
+    "source_index": 31377
+  },
+  {
+    "name": "action_3_case_3",
+    "state": "[x=-0.0545, y=-0.0007, vx=0.4188, vy=0.0452, angle=0.0013, angular_vel=0.1452, left_leg=0.0000, right_leg=0.0000]",
+    "expected_action": 3,
+    "expected_text": "Action: 3 (fire right engine).",
+    "source_index": 15483
+  }
+]

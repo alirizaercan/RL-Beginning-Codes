@@ -1,0 +1,50 @@
+### Qwen2.5-0.5B full fine-tuning on LunarLander action dataset
+### Reference config for LLaMA-Factory, tuned conservatively for Colab T4.
+
+### model
+model_name_or_path: Qwen/Qwen2.5-0.5B
+trust_remote_code: true
+
+### method
+stage: sft
+do_train: true
+do_eval: true
+finetuning_type: full
+compute_accuracy: true
+gradient_checkpointing: true
+
+### dataset
+dataset: lunar_lander_270_reward_train
+eval_dataset: lunar_lander_270_reward_eval
+template: alpaca
+cutoff_len: 512
+overwrite_cache: true
+preprocessing_num_workers: 2
+dataloader_num_workers: 2
+
+### output
+output_dir: saves/qwen25_05b_base_full_ft_lunarlander_t4
+logging_steps: 10
+eval_steps: 200
+save_steps: 200
+save_total_limit: 3
+save_strategy: steps
+plot_loss: true
+overwrite_output_dir: true
+save_only_model: true
+report_to: none
+
+### train
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+gradient_accumulation_steps: 32
+learning_rate: 5.0e-6
+num_train_epochs: 1.0
+lr_scheduler_type: cosine
+eval_strategy: steps
+warmup_steps: 100
+weight_decay: 0.01
+max_grad_norm: 1.0
+fp16: true
+bf16: false
+ddp_timeout: 180000000

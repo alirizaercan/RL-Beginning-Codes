@@ -57,6 +57,7 @@ Thumbs.db
 # *.pth
 
 # Local fine-tune notebook workspace and generated artifacts
-fine-tune/local_notebooks/
+fine-tune/workspaces/local_notebooks/
 fine-tune/local_runs/
+fine-tune/unsloth_compiled_cache/
 runs/

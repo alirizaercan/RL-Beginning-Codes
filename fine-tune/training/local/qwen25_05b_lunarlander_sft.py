@@ -28,7 +28,7 @@ from unsloth.chat_templates import get_chat_template
 
 DEFAULT_MODEL_NAME = "Qwen/Qwen2.5-0.5B"
 DEFAULT_DATASET_ID = "Ali2023kosemen/lunarlander"
-DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parent / "outputs" / "qwen25_05b_lunarlander_action_lora"
+DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parents[2] / "outputs" / "qwen25_05b_lunarlander_action_lora"
 
 
 def parse_args():

@@ -1,0 +1,126 @@
+Qwen2.5-0.5B LunarLander Egitim Notlari
+=======================================
+
+Amac
+----
+`Ali2023kosemen/lunar_lander_270_reward` veri seti uzerinde Qwen2.5-0.5B modelini egitmek.
+Iki yol ele alinmistir:
+1. Full fine-tuning (LoRA'siz, asil proje icin onerilen yol)
+2. Scratch training / random initialization (arastirma amacli temel karsilastirma)
+
+Veri Seti Notu
+--------------
+`Ali2023kosemen/lunar_lander_270_reward` conversation-style bir SFT veri setidir.
+Supervised fine-tuning icin uygundur.
+Tek basina anlamli bir from-scratch pretraining corpus'u olarak uygun degildir.
+
+Yerel Makine Kontrolu
+---------------------
+Bu makinede terminalden yapilan kontroller:
+- `nvidia-smi` bir noktada surucuye / kullanilabilir GPU'ya erisemedi.
+- `torch.cuda.is_available()` degeri `False` dondu.
+Sonuc: bu durumda yerelde egitim uygun degil; Colab T4 veya CUDA etkin baska bir makine kullanilmalidir.
+
+Not: daha sonra sistemde `RTX 3050 Laptop GPU (4 GB)` goruldu. Ancak 4 GB VRAM, LoRA'siz full fine-tuning icin pratikte cok sinirlidir. Bu nedenle asil egitim icin yine Colab T4 veya daha guclu bir GPU onerilir.
+
+Onerilen Yol
+------------
+Gercek proje icin onerilen yol: LLaMA-Factory ile full SFT.
+Sebep: veri seti zaten ShareGPT-style conversation formatina yakin ve Qwen dokumantasyonu LLaMA-Factory ile MS-SWIFT uzerinden full-parameter SFT destegini acikca veriyor.
+
+Full Fine-Tuning (Onerilen)
+---------------------------
+Hedef: Qwen/Qwen2.5-0.5B-Instruct
+Yontem: LoRA'siz full fine-tuning (SFT)
+Framework: LLaMA-Factory
+
+Minimum pratik kurulum:
+- Colab T4 16 GB: konservatif ayarlarla denenebilir
+- Daha iyi: L4 / A10 / 24 GB+
+
+T4-uyumlu baslangic ayarlari:
+- cutoff_len: 512
+- per_device_train_batch_size: 1
+- gradient_accumulation_steps: 32
+- fp16: true
+- gradient_checkpointing: true
+- learning_rate: 1e-5
+- num_train_epochs: 1
+
+Colab T4 uzerindeki tahmini sure:
+- Smoke test (200-500 step): yaklasik 20 ila 60 dakika
+- Tum veri seti uzerinde 1 konservatif epoch: yaklasik 4 ila 10 saat
+Bu sureler yaklasiktir; tokenized ortalama sequence length ve Colab throttling'e gore degisebilir.
+
+Beklenen sonuc:
+- Eger hedef deploy edilebilir bir proje modeli ise en mantikli yol budur.
+- Pretrained Qwen bilgisini korur ve modeli LunarLander gorevine uyarlar.
+
+Scratch Training (Arastirma Amacli)
+-----------------------------------
+Hedef: random-init Qwen2.5-0.5B mimarisi
+Yontem: modeli config'den sifirdan kurup egitmek
+Framework: Transformers Trainer
+
+Donanim gercegi:
+- Colab T4 ancak cok kucuk bir smoke test calistirabilir
+- Anlamli scratch training icin cok daha fazla hesaplama gucu ve cok daha buyuk genel metin corpus'u gerekir
+- Ciddi scratch training icin tercih edilen kurulum: A100 40 GB / 80 GB veya multi-GPU egitim
+
+T4-uyumlu smoke-test ayarlari:
+- block_size: 512
+- per_device_train_batch_size: 1
+- gradient_accumulation_steps: 32
+- fp16: true
+- gradient_checkpointing: true
+- max_steps: 200
+
+Colab T4 uzerindeki tahmini sure:
+- 200-step smoke test: yaklasik 30 ila 90 dakika
+- Bu gorev odakli veri seti ile anlamli sekilde convergence'a gitmek: gercekci degil / onerilmez
+
+Beklenen sonuc:
+- Random agirliklardan baslamayi gostermek icin faydalidir
+- Ancak bu veri seti tek basina asil LunarLander modelini cikarmak icin uygun degildir
+
+Yazilim Gereksinimleri
+----------------------
+Full FT (LLaMA-Factory):
+- Python 3.10+
+- CUDA destekli PyTorch
+- LLaMA-Factory
+- datasets
+- transformers
+- accelerate
+
+Scratch training:
+- Python 3.10+
+- CUDA destekli PyTorch
+- transformers
+- datasets
+- accelerate
+
+Referans Linkler
+----------------
+Qwen + LLaMA-Factory dokumani:
+https://qwen.readthedocs.io/en/v3.0/training/llama_factory.html
+
+Qwen + MS-SWIFT dokumani:
+https://qwen.readthedocs.io/en/latest/training/ms_swift.html
+
+LLaMA-Factory reposu:
+https://github.com/hiyouga/LLaMA-Factory
+
+Qwen2.5-0.5B model config:
+https://huggingface.co/Qwen/Qwen2.5-0.5B/blob/main/config.json
+
+NVIDIA NeMo Qwen2/2.5 dokumani:
+https://docs.nvidia.com/nemo-framework/user-guide/25.09/llms/qwen2.html
+
+Hugging Face causal LM kilavuzu:
+https://huggingface.co/docs/transformers/tasks/language_modeling
+
+Alt Cizgi
+---------
+- Gercek proje icin: pretrained Qwen2.5-0.5B uzerinde full fine-tuning kullan.
+- Arastirma karsilastirmasi icin: scratch script'i smoke test olarak calistir, ama bu veri seti ile rekabetci bir model bekleme.
