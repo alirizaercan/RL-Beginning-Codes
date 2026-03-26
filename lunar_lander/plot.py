@@ -50,6 +50,5 @@ for ax, (label, group) in zip(axes, df.groupby("action_label")):
 
 fig.suptitle(f"X-Y Position per Action ({NUM_EPISODES} episodes)", fontsize=14)
 plt.tight_layout()
-plt.savefig("scatter_xy.png", dpi=150)
+plt.savefig("xy.png", dpi=150)
 plt.show()
-print("Saved scatter_xy.png")
