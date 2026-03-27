@@ -27,12 +27,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output-dir",
-        default="saves/qwen25_05b_full_ft_lunarlander_a4000",
+        default="saves/qwen25_05b_base_full_ft_lunarlander_a4000",
         help="LLaMA-Factory output directory.",
     )
     parser.add_argument(
         "--archive-base",
-        default="qwen25_05b_lunarlander_full_ft_a4000",
+        default="qwen25_05b_base_full_ft_lunarlander_a4000",
         help="Base name for the archive output (without extension).",
     )
     return parser.parse_args()
