@@ -55,3 +55,6 @@ Thumbs.db
 # Model checkpoints (uncomment if you don't want to track models)
 # *.pt
 # *.pth
+*.json
+*.jinja
+hf_model
