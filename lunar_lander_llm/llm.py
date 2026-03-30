@@ -2,7 +2,7 @@ import re
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-MODEL_ID = "./hf_model"
+MODEL_ID = "./models/hf_model_action_50_000"
 
 _tokenizer = None
 _model = None
