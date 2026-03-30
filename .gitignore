@@ -57,4 +57,4 @@ Thumbs.db
 # *.pth
 *.json
 *.jinja
-hf_model
+models
