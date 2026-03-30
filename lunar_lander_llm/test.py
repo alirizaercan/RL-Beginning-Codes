@@ -1,6 +1,6 @@
 from env import LunarLanderEnv
 
-MAX_STEPS = 1000
+MAX_STEPS = 500
 
 env = LunarLanderEnv(render_mode="human")
 
