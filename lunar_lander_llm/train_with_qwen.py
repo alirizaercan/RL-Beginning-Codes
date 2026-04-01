@@ -6,8 +6,6 @@ from qwen_policy import QwenActorCriticPolicy
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f"Using device: {device}")
-if device == 'cpu':
-    print("WARNING: Fine-tuning Qwen on CPU will be VERY slow!")
 
 env = gym.make("LunarLander-v3")
 
@@ -17,29 +15,36 @@ model = PPO(
     policy_kwargs={
         "qwen_model_path": "./models/hf_model_ep_3500",
     },
-    learning_rate=1e-5,
-    n_steps=512,  
-    batch_size=16, 
-    n_epochs=2,
-    gamma=0.99,
-    gae_lambda=0.95,
-    clip_range=0.2,
+    batch_size=4,
+    n_steps=128,
+    n_epochs=1,
+    ent_coef=0.01,
+    learning_rate=1e-5,   
     verbose=1,
     device=device
 )
 
-total_timesteps = 100_000 
-print(f"Starting training for {total_timesteps:,} timesteps...")
+total_timesteps = 50_000  
+print(f"\nStarting training for {total_timesteps:,} timesteps...")
 
-model.learn(
-    total_timesteps=total_timesteps,
-    progress_bar=True
-)
-
-model.save("ppo_qwen_finetuned")
-
-print("\nSaving fine-tuned Qwen model...")
-model.policy.qwen_model.save_pretrained("./models/qwen_ppo_finetuned")
-model.policy.qwen_tokenizer.save_pretrained("./models/qwen_ppo_finetuned")
+try:
+    model.learn(
+        total_timesteps=total_timesteps,
+        progress_bar=True
+    )
+    
+    model.save("ppo_qwen_finetuned_2")
+    print("Model saved!")
+    
+    print("Saving fine-tuned Qwen model...")
+    model.policy.qwen_model.save_pretrained("./models/qwen_ppo_finetuned_2")
+    model.policy.qwen_tokenizer.save_pretrained("./models/qwen_ppo_finetuned_2")
+    print("Qwen model saved!")
+    
+except RuntimeError as e:
+    if "out of memory" in str(e):
+        print("OUT OF MEMORY!")
+    raise
 
 env.close()
+print("Training completed!")
