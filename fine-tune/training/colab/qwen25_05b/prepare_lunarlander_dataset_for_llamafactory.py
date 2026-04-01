@@ -24,6 +24,15 @@ STRICT_PREFIX = (
 )
 
 
+def default_dataset_slug(dataset_id: str) -> str:
+    slug = dataset_id.rsplit("/", 1)[-1].strip().lower()
+    slug = re.sub(r"[^a-z0-9]+", "_", slug)
+    slug = re.sub(r"_+", "_", slug).strip("_")
+    if not slug:
+        raise ValueError(f"Could not derive dataset slug from dataset id: {dataset_id}")
+    return slug
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -42,6 +51,11 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=3407,
         help="Random seed used for the deterministic train/eval split.",
+    )
+    parser.add_argument(
+        "--dataset-slug",
+        default=None,
+        help="Optional slug used for generated file names and dataset_info keys. Defaults to the dataset id suffix.",
     )
     return parser.parse_args()
 
@@ -71,7 +85,7 @@ def save_json(path: Path, rows: list[dict[str, str]]) -> None:
     path.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def update_dataset_info(info_path: Path) -> None:
+def update_dataset_info(info_path: Path, dataset_slug: str) -> None:
     if info_path.exists():
         dataset_info = json.loads(info_path.read_text(encoding="utf-8"))
     else:
@@ -84,16 +98,16 @@ def update_dataset_info(info_path: Path) -> None:
         }
     }
 
-    dataset_info["lunar_lander_270_reward_train"] = {
-        "file_name": "lunar_lander_270_reward_train.json",
+    dataset_info[f"{dataset_slug}_train"] = {
+        "file_name": f"{dataset_slug}_train.json",
         **template_columns,
     }
-    dataset_info["lunar_lander_270_reward_eval"] = {
-        "file_name": "lunar_lander_270_reward_eval.json",
+    dataset_info[f"{dataset_slug}_eval"] = {
+        "file_name": f"{dataset_slug}_eval.json",
         **template_columns,
     }
-    dataset_info["lunar_lander_270_reward_full"] = {
-        "file_name": "lunar_lander_270_reward_full.json",
+    dataset_info[f"{dataset_slug}_full"] = {
+        "file_name": f"{dataset_slug}_full.json",
         **template_columns,
     }
 
@@ -102,15 +116,16 @@ def update_dataset_info(info_path: Path) -> None:
 
 def main() -> None:
     args = parse_args()
+    dataset_slug = args.dataset_slug or default_dataset_slug(args.dataset_id)
 
     repo_root = Path.cwd()
     data_dir = repo_root / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
 
     info_path = data_dir / "dataset_info.json"
-    train_path = data_dir / "lunar_lander_270_reward_train.json"
-    eval_path = data_dir / "lunar_lander_270_reward_eval.json"
-    full_path = data_dir / "lunar_lander_270_reward_full.json"
+    train_path = data_dir / f"{dataset_slug}_train.json"
+    eval_path = data_dir / f"{dataset_slug}_eval.json"
+    full_path = data_dir / f"{dataset_slug}_full.json"
 
     ds = load_dataset(args.dataset_id, split="train")
     split_ds = ds.train_test_split(test_size=args.eval_size, seed=args.seed, shuffle=True)
@@ -122,12 +137,13 @@ def main() -> None:
     save_json(train_path, train_rows)
     save_json(eval_path, eval_rows)
     save_json(full_path, full_rows)
-    update_dataset_info(info_path)
+    update_dataset_info(info_path, dataset_slug)
 
     print(f"Saved train dataset to: {train_path}")
     print(f"Saved eval dataset to:  {eval_path}")
     print(f"Saved full dataset to:  {full_path}")
     print(f"Updated dataset info:   {info_path}")
+    print(f"Registered dataset keys: {dataset_slug}_train, {dataset_slug}_eval, {dataset_slug}_full")
     print(f"Train rows: {len(train_rows)}")
     print(f"Eval rows:  {len(eval_rows)}")
     print("Sample train row:")
