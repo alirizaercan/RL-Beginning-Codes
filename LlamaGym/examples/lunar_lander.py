@@ -1,5 +1,7 @@
 import re
+import logging
 from tqdm import trange
+import wandb
 import gymnasium as gym
 
 from transformers import AutoTokenizer, BitsAndBytesConfig
@@ -10,11 +12,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from llamagym.agent import Agent
 
-
-STRICT_PREFIX = (
-    "Return exactly one line in this format:\n"
-    "Action: <0|1|2|3>\n\n"
-)
+logging.basicConfig(level=logging.WARNING)  
 
 
 def build_alpaca_prompt(instruction):
@@ -30,7 +28,6 @@ def build_alpaca_prompt(instruction):
 class LunarLanderAgent(Agent):
     def get_system_prompt(self):
         # Alpaca format has no system turn — return empty string.
-        # The full instruction is built inside format_observation.
         return ""
 
     def format_observation(self, observation):
@@ -40,7 +37,11 @@ class LunarLanderAgent(Agent):
             f"angle={angle:.4f}, angular_vel={ang_vel:.4f}, "
             f"left_leg={leg_l:.1f}, right_leg={leg_r:.1f}]"
         )
-        instruction = STRICT_PREFIX + f"State: {state}. What action should the lander take?"
+
+        instruction = (
+            f"State: {state}. What action should the lander take?\n"
+            f"Return exactly one line in this format:\nAction: <0|1|2|3>"
+        )
         return build_alpaca_prompt(instruction)
 
     def extract_action(self, response):
@@ -69,13 +70,11 @@ if __name__ == "__main__":
         "lora/bias": "none",
         "lora/task_type": "CAUSAL_LM",
 
-        "load_in_8bit": False,
-
         # ---- PPO ----
         "batch_size": 8,
         "mini_batch_size": 8,
         "seed": 42,
-        "episodes": 2000,
+        "episodes": 5000,
 
         # ---- generation ----
         "generate/max_new_tokens": 16,
@@ -84,6 +83,8 @@ if __name__ == "__main__":
         "generate/top_k": 0,
         "generate/temperature": 0.7,
     }
+
+    wandb_run = wandb.init(project=os.environ.get("WANDB_PROJECT"), config=hyperparams)
 
     device = "cuda:0" if __import__("torch").cuda.is_available() else "cpu"
 
@@ -94,14 +95,10 @@ if __name__ == "__main__":
             if k.startswith("lora/")
         }
     )
-    
-
-    quantization_config = BitsAndBytesConfig(load_in_8bit=False)
 
     model = AutoModelForCausalLMWithValueHead.from_pretrained(
         pretrained_model_name_or_path=hyperparams["model_name"],
         peft_config=lora_config,
-        quantization_config=quantization_config,
     ).to(device)
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -112,7 +109,6 @@ if __name__ == "__main__":
     if tokenizer.pad_token is None:
         tokenizer.add_special_tokens({"pad_token": "<pad>"})
         model.pretrained_model.resize_token_embeddings(len(tokenizer))
-        # Update model config to use the new pad token
         model.config.pad_token_id = tokenizer.pad_token_id
 
     agent = LunarLanderAgent(
@@ -126,7 +122,7 @@ if __name__ == "__main__":
         },
     )
 
-    env = gym.make(hyperparams["env"])
+    env = gym.make(hyperparams["env"])  
 
     for episode in trange(hyperparams["episodes"]):
         observation, info = env.reset()
@@ -148,8 +144,18 @@ if __name__ == "__main__":
             "message_ct": len(agent.current_episode_messages),
         }
 
+        if episode > 0 and episode % 100 == 0:
+            ckpt_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..", "models", f"checkpoint_ep{episode}"
+            )
+            model.pretrained_model.save_pretrained(ckpt_path)
+            tokenizer.save_pretrained(ckpt_path)
+            print(f"Checkpoint saved at episode {episode}")
+
         train_stats = agent.terminate_episode()
         episode_stats.update(train_stats)
         print(episode_stats)
+        wandb.log(episode_stats)
 
     env.close()
