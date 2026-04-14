@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from typing import List, Dict
 
@@ -12,6 +13,8 @@ from trl import (
 import warnings
 warnings.filterwarnings('ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning)
+
+logger = logging.getLogger(__name__)
 
 
 class Agent(ABC):
@@ -60,28 +63,37 @@ class Agent(ABC):
         pass
 
     def llm(self, messages: List[Dict[str, str]]) -> str:
-        prompt = self.tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
-        )
-        inputs = self.tokenizer(prompt, return_tensors="pt", padding=True, truncation=True).to(self.device)
-        
-        # Ensure we pass attention_mask and pad_token_id to avoid warnings
+        # Only the latest observation is needed — environment is Markovian,
+        # full state is captured in the current observation alone.
+        prompt = messages[-1]["content"]
+        logger.debug("LLM prompt: %s", prompt)
+
+        inputs = self.tokenizer(
+            prompt,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,     
+        ).to(self.device)
+
         generate_kwargs = {
             key.split("/")[-1]: value
             for key, value in self.generate_config_dict.items()
         }
-        
-        # Add pad_token_id if available
+
         if self.tokenizer.pad_token_id is not None:
             generate_kwargs["pad_token_id"] = self.tokenizer.pad_token_id
-            
-        generate_ids = self.model.generate(
-            inputs=inputs.input_ids,
-            attention_mask=inputs.attention_mask,
-            **generate_kwargs
-        )
+
+        with torch.no_grad():     
+            generate_ids = self.model.generate(
+                inputs=inputs.input_ids,
+                attention_mask=inputs.attention_mask,
+                **generate_kwargs
+            )
+
         new_ids = generate_ids[:, inputs.input_ids.shape[1]:]
         response = self.tokenizer.decode(new_ids[0], skip_special_tokens=True).strip()
+
+        torch.cuda.empty_cache()    # release fragmented cache after each inference step
 
         return response
 
@@ -90,16 +102,20 @@ class Agent(ABC):
         self.current_episode_messages += [{"role": "user", "content": message}]
 
         response = self.llm(self.current_episode_messages)
+
         try:
             action = self.extract_action(response)
         except Exception as e:
+            logger.error("Error extracting action: %s", e)
             return None
 
         self.current_episode_messages += [{"role": "assistant", "content": response}]
+        logger.debug("Action extracted: %s", action)
         return action
 
     def assign_reward(self, reward):
         self.current_episode_rewards.append(reward)
+        logger.debug("Assigned reward: %s", reward)
 
     def format_episode_for_ppo(self, messages, rewards):
         queries, responses = [], []
@@ -109,7 +125,7 @@ class Agent(ABC):
             if i + 1 >= len(messages) or messages[i + 1]["role"] != "assistant":
                 continue
 
-            # query  = everything the model saw (the full prompt)
+            # query    = the full Alpaca prompt the model saw
             # response = what the model generated
             query_text    = messages[i]["content"]
             response_text = messages[i + 1]["content"]
@@ -121,11 +137,11 @@ class Agent(ABC):
             responses.append(response)
 
         if all(reward == 0 for reward in rewards[:-1]):
-            # if sparse rewards, give equal reward to all conversation turns
+            # Sparse rewards: distribute final reward equally across all turns
             per_turn_reward = rewards[-1] / len(queries)
             rewards = [torch.tensor(per_turn_reward, dtype=torch.float32)] * len(queries)
         else:
-            rewards = [torch.tensor(reward, dtype=torch.float32) for reward in rewards[:len(queries)]]
+            rewards = [torch.tensor(r, dtype=torch.float32) for r in rewards[:len(queries)]]
 
         return queries, responses, rewards
 
@@ -160,16 +176,14 @@ class Agent(ABC):
 
     def train_batch(self, batch_queries, batch_responses, batch_rewards):
         if len(batch_queries) > self.ppo_config.batch_size:
-            queries = batch_queries[: self.ppo_config.batch_size]
-            responses = batch_responses[: self.ppo_config.batch_size]
-            rewards = batch_rewards[: self.ppo_config.batch_size]
+            queries   = batch_queries[:self.ppo_config.batch_size]
+            responses = batch_responses[:self.ppo_config.batch_size]
+            rewards   = batch_rewards[:self.ppo_config.batch_size]
 
-            # keep the remainder for the next batch
-            self.current_batch["queries"] = batch_queries[self.ppo_config.batch_size :]
-            self.current_batch["responses"] = batch_responses[
-                self.ppo_config.batch_size :
-            ]
-            self.current_batch["rewards"] = batch_rewards[self.ppo_config.batch_size :]
+            # Keep remainder for the next batch
+            self.current_batch["queries"]    = batch_queries[self.ppo_config.batch_size:]
+            self.current_batch["responses"]  = batch_responses[self.ppo_config.batch_size:]
+            self.current_batch["rewards"]    = batch_rewards[self.ppo_config.batch_size:]
         else:
             queries, responses, rewards = batch_queries, batch_responses, batch_rewards
             self.current_batch = {"queries": [], "responses": [], "rewards": []}
